@@ -113,7 +113,7 @@ if __name__ == "__main__":
         a = g_conf['periodicity']
         t = g_conf['strut param']
 
-        logger.info("Generating gyroid point cloud...")
+        logger.info("Generating gyroid...")
         vol = tpms.gyroid.get_voxel_grid(t=t, a=a, res=res)
 
 
@@ -126,7 +126,7 @@ if __name__ == "__main__":
     except:
         pass
     else:
-        logger.info("Offsetting point cloud...")
+        logger.info("Offsetting...")
         mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
         vol = tpms.mesh.voxel_offset(vol=vol, distance=distance * mgm, direction='sym')
 
@@ -140,7 +140,7 @@ if __name__ == "__main__":
         vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
         shift = conf['mesh']['shift'] = shift + cap_shift
 
-    logger.info("Generating mesh from point cloud...")
+    logger.info("Generating mesh from voxel grid...")
     verts, faces = tpms.mesh.get_mesh(vol=vol, spacing=sizeunit_per_voxel, shift=shift)
 
     conf['mesh']['vertices'] = len(verts)
