@@ -4,11 +4,6 @@ from skimage import measure
 import logging
 logger = logging.getLogger(__name__)
 
-'''
-def get_voxel_grid(res):
-    ext = 1
-    return np.mgrid[-ext:ext:res, -ext:ext:res, -ext:ext:res]
-'''
 
 def get_mesh(vol, spacing, shift=None):
     verts, faces, normals, values = measure.marching_cubes(vol, level=0, spacing=(spacing, spacing, spacing))
@@ -29,9 +24,6 @@ def mean_gradient_magnitude(vol, sizeunit_per_voxel):
 # direction = 'sym', '+', '-'
 # surfaces will have will negative facing each other
 def voxel_offset(vol, distance, direction='sym'):
-    #mgm = mean_gradient_magnitude(vol, sizeunit_per_voxel) * distance
-    #distance = mgm * distance
-    
     if direction == 'sym':
         distance = distance / 2
         outer = vol - distance
