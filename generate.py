@@ -154,7 +154,7 @@ if __name__ == "__main__":
         volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
 
         p = conf['mesh']['lid pad'] = round(distance / sizeunit_per_voxel)
-        shift = shift + p
+        shift = shift + p * sizeunit_per_voxel
 
         logger.info("Creating lids...")
         vola = np.pad(vola, (
