@@ -23,7 +23,7 @@ def mean_gradient_magnitude(vol, sizeunit_per_voxel):
 
 # direction = 'sym', '+', '-'
 # surfaces will have will negative facing each other
-def voxel_offset(vol, distance, direction='sym'):
+def voxel_offset(vol, distance, direction=None):
     if direction == 'sym':
         distance = distance / 2
         outer = vol - distance
@@ -35,7 +35,7 @@ def voxel_offset(vol, distance, direction='sym'):
         outer = vol
         inner = -(vol + distance)
     else:
-        raise ValueError('direction option not defined')
+        return vol - distance
 
     return np.maximum(inner, outer)
 
