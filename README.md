@@ -93,6 +93,7 @@ mesh:
   resolution: 40
   thicken: 1
   cap extremes:
+  heat exchanger: 1
   
 gyroid:
   periodicity: 2
@@ -108,9 +109,12 @@ gyroid:
   * **resolution:** Required. The resolution of the entire size. If too coarse the mesh will not generate properly. If too fine the mesh will be unnecessarily large and difficult to post process. To avoid rounding issues, ensure (size / resolution) have a finite number of decimals.  
 
   * **thicken:** Optional. Thickness in size units. Offset the surface (thicken / 2 ) to each side.
+
   * **cap extremes:** Optional. Puts a "cap" on the surface at the bounding box extremes. This makes an infinitely connected surface a solid.  
   Use with `thicken` to make a shell.  
   Use without `thicken` to make a skeletal.
+
+  * **heat exchanger:** Optional. Creates alternating lids on volumes in X and Y. Caps the entire face in Z. Thickness in size units. Offset the surface (`heat exchanger / 2`) to each side. Cannot be used together with `thicken` or `cap extremes`. The lids will have a thickness of `round(heat exchanger / (size / resolution))`. `size` is the size of the gyroid solid, the lids are outside `size`. Origin of gyroid solid is at 0,0,0.
 
 * **gyroid:**
   * **periodicity:** Required. The number of periods within the cube.
@@ -180,11 +184,26 @@ gyroid:
 
 <img src="images/gyroid_s40_r40_cap_p2_sp-0.7.png" />
 
+### Gyroid heat exchanger
+
+```
+mesh:
+  size: 40
+  resolution: 80
+  heat exchanger: 1
+gyroid:
+  periodicity: 2
+  strut param: 0
+```
+
+<img src="images/gyroid_s40_r80_heatexchanger1_p2_sp0.png" />
+
+
 ## Future features
 
 Possible future features. Not actively development at the moment.
 
-* Generate separate alternating caps on thickened geometry to close of hot/cold side volumes. (I accidentally generated the surfaces for this during development so should be possible.)
+* Done ~~Generate separate alternating caps on thickened geometry to close of hot/cold side volumes. (I accidentally generated the surfaces for this during development so should be possible.)~~
 
 * Geometry with non-equal sides. This has a value if the above is developed. Else just cut in post process.
 
