@@ -1,0 +1,14 @@
+metadata:
+  description: Gyroid example
+  filename: gyroid_example
+
+mesh:
+  size: 40
+  resolution: 80
+  _thicken: 1
+  _cap extremes:
+  heat exchanger: 0.8
+ 
+gyroid:
+  periodicity: 2
+  strut param: 0
