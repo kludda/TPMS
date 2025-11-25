@@ -1,4 +1,3 @@
-#import os
 import argparse
 import yaml
 import tpms
@@ -8,7 +7,6 @@ import numpy as np
 
 import logging
 logger = logging.getLogger(__name__)
-
 
 
 if __name__ == "__main__":
@@ -58,7 +56,6 @@ if __name__ == "__main__":
                         type=str 
                         )
 
-
     args = parser.parse_args()
     
     loglevel = args.log
@@ -68,11 +65,13 @@ if __name__ == "__main__":
         raise ValueError('Invalid log level: %s' % loglevel)
     logging.basicConfig(level=numeric_level)
 
+
     logger.info("Loading configuration file...")
     #conf_file = os.getcwd() + '/' + args.conf
     conf_file = args.conf
     with open(conf_file, encoding='utf-8') as stream:
         conf = yaml.safe_load(stream)
+
 
     logger.info("Reading metadata...")
     try:
@@ -91,7 +90,6 @@ if __name__ == "__main__":
 
     res = m_conf['resolution']
     size = m_conf['size']
-
     sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size / res
 
 
@@ -110,9 +108,6 @@ if __name__ == "__main__":
             t = g_conf['strut param']
         except:
             raise ValueError("Missing required gyroid conf: 'periodicity' or 'strut param'")
-
-        a = g_conf['periodicity']
-        t = g_conf['strut param']
 
         logger.info("Generating gyroid...")
         vol = tpms.gyroid.get_voxel_grid(t=t, a=a, res=res)
@@ -133,11 +128,20 @@ if __name__ == "__main__":
 
 
     try:
+        m_conf['cap extremes']
+    except:
+        pass
+    else:
+        logger.info("Generating surfaces at bounding box extremes...")
+        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
+        shift = shift + cap_shift
+
+
+    try:
         distance = m_conf['heat exchanger']
     except:
         pass
     else:
-
         try:
             m_conf['thicken']
             m_conf['cap extremes']
@@ -193,16 +197,6 @@ if __name__ == "__main__":
         shift = shift + cap_shift
 
 
-    try:
-        m_conf['cap extremes']
-    except:
-        pass
-    else:
-        logger.info("Generating surfaces at bounding box extremes...")
-        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
-        shift = shift + cap_shift
-
-
     logger.info("Generating mesh from voxel grid...")
     verts, faces = tpms.mesh.get_mesh(vol=vol, spacing=sizeunit_per_voxel, shift=shift)
     conf['mesh']['shift'] = shift
@@ -216,9 +210,8 @@ if __name__ == "__main__":
     if args.stl:
         conf['stl'] = {}
         stl = conf['stl']['filename'] = filename + '.stl'
-        #out = os.getcwd() + '/' + args.stl
         logger.info("Saving STL file: '" + stl + "'...")
-        tpms.save_stl(verts = verts, faces=faces, filename=stl)
+        tpms.save_stl(verts=verts, faces=faces, filename=stl)
 
     if args.txt:
         conf['txt'] = {}
@@ -231,7 +224,7 @@ if __name__ == "__main__":
         conf['png'] = {}
         png = conf['png']['filename'] = filename + '.png'
         logger.info("Saving PNG file: '" + png + "'...")
-        tpms.save_png(verts = verts, faces=faces, filename=png)
+        tpms.save_png(verts=verts, faces=faces, filename=png)
 
     logger.info(
         "Configuration:\n" +
@@ -240,6 +233,6 @@ if __name__ == "__main__":
 
     if args.show:
         logger.info("Showing mesh...")
-        tpms.show(verts = verts, faces=faces)
+        tpms.show(verts=verts, faces=faces)
 
 
