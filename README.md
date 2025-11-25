@@ -165,14 +165,12 @@ I suggest you merge the geometries in a mesh software, e.g. [MeshLab](https://ww
 Ideas on work flow:
 
 1. Generate a heat exchanger core using this tool.
-
-1. a. Design the heat exchanger shell *as printed* with inlets, outlets etc. in your parametric CAD software. Ensure your heat exchanger core can be inserted at origin (0, 0, 0). Mind the orientation.
-   a. Export the *as printed* heat exchanger shell to mesh.
-   a. Optional as needed: import your *as printed* design to a separate design and add your post processing steps (e.g. machinging, surface finnish, ...).
-
+1. a. Design the heat exchanger shell *as printed* with inlets, outlets etc. in your parametric CAD software. Ensure your heat exchanger core can be inserted at origin (0, 0, 0). Mind the orientation.  
+  b. Export the *as printed* heat exchanger shell to mesh.  
+  c. Optional as needed: import your *as printed* design to a separate design and add your post processing steps (e.g. machinging, surface finnish, ...).
 1. a. Import heat exchanger shell and core to a mesh software, e.g. MeshLab. In case of MeshLab, at least, the mesh will imported to (0, 0, 0) and is ready to be merged.  
-   a. Merge mesh.  
-   b. Export mesh.
+  b. Merge mesh.  
+   c. Export mesh.
 
 
 ## Examples
