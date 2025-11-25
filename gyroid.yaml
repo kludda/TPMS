@@ -5,9 +5,9 @@ metadata:
 mesh:
   size: 40
   resolution: 40
-  _thicken: 1
-  _cap extremes:
-  _heat exchanger: 1
+  thicken: 1
+  cap extremes:
+  heat exchanger: 1
 
 gyroid:
   periodicity: 2
