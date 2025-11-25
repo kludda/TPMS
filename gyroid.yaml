@@ -4,11 +4,11 @@ metadata:
 
 mesh:
   size: 40
-  resolution: 80
+  resolution: 40
   _thicken: 1
   _cap extremes:
-  heat exchanger: 0.8
- 
+  _heat exchanger: 1
+
 gyroid:
   periodicity: 2
   strut param: 0
