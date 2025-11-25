@@ -15,6 +15,13 @@ if __name__ == "__main__":
 
     req_grp = parser.add_argument_group(title='required')
 
+    parser.add_argument(
+                        '--log', 
+                        default='WARNING', 
+                        help='DEBUG, INFO, WARNING', 
+                        type=str 
+                        )
+
     req_grp.add_argument('--conf',
                         help='Your configuration file.', 
                         type=str, 
@@ -47,13 +54,6 @@ if __name__ == "__main__":
                         default=False,
                         help='Show generated mesh in a window.',
                         action='store_true'
-                        )
-
-    parser.add_argument(
-                        '--log', 
-                        default='WARNING', 
-                        help='DEBUG, INFO, WARNING', 
-                        type=str 
                         )
 
     args = parser.parse_args()
