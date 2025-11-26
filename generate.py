@@ -83,16 +83,24 @@ if __name__ == "__main__":
     logger.info("Reading mesh configuration...")
     try:
         m_conf = conf['mesh']
-        m_conf['resolution']
-        m_conf['size']
+        res = m_conf['resolution']
+        size = m_conf['size']
     except:
         raise ValueError("Missing required mesh conf: 'resolution' or 'size'")
 
-    res = m_conf['resolution']
-    size = m_conf['size']
-    sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size / res
+
+    if not isinstance(size, (list, int, float)):
+        raise ValueError("'size' shall be int, float or array.")
+
+    if isinstance(size, list):
+        if not len(size) == 3:
+            raise ValueError("'size' have wrong length.")
+        size = np.array(size)
+    else:
+        size = np.array([m_conf['size'], m_conf['size'], m_conf['size']])
 
 
+    sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size.max() / res
     vol = None
     shift = 0
 
@@ -110,7 +118,7 @@ if __name__ == "__main__":
             raise ValueError("Missing required gyroid conf: 'periodicity' or 'strut param'")
 
         logger.info("Generating gyroid...")
-        vol = tpms.gyroid.get_voxel_grid(t=t, a=a, res=res)
+        vol = tpms.gyroid.get_voxel_grid(t=t, a=a, res=res, size=size)
 
 
     if vol is None:
