@@ -14,19 +14,19 @@ This is, as far as I know, the only open source gyroid generator that:
 &#x2615; [Buy me a coffee :)](https://paypal.me/davidalind)
 
 <p align="center">
-<img src="images/gyroid_s120_r240_he1_p12_s0.png" />
+<img src="images/gyroid_s150-60-100_r300_he1_p15_s0.png" />
 </p>
 Config file for the above:
 
 ```
 metadata:
-  filename: gyroid_s120_r240_he1_p12_s0
+  filename: gyroid_s150-60-100_r300_he1_p15_s0
 mesh:
-  size: 120
-  resolution: 240
+  size: [150, 60, 100]
+  resolution: 300
   heat exchanger: 1
 gyroid:
-  periodicity: 12
+  periodicity: 15
   strut param: 0
 ```
 
@@ -101,6 +101,7 @@ metadata:
 
 mesh:
   size: 40
+  size: [40, 20, 40]
   resolution: 40
   thicken: 1
   cap extremes:
@@ -116,11 +117,13 @@ gyroid:
   * You can add any tag, like `description`, anywhere, as long as they don't confilict with existing tags, and they will be saved in the text file.
 
 * **mesh:**
-  * **size:** Required. Size of geometry. The tool will generate a cube with equal length sides.  
+  * **size:** Required. Size of geometry.  
+    If size is an int or a float; the tool will generate a cube.  
+    If size is an array; the tool will generate a rectangular cuboid with sides of length [x, y, z].  
     >Note: `size` is the size of the gyroid surface or solid. Any "caps" or "lids" are outside `size`. Origin of gyroid surface or solid is however always at (0, 0, 0) in output file. 
 
-  * **resolution:** Required. The resolution of the entire size. If too coarse the mesh will not generate properly. If too fine the mesh will be unnecessarily large and difficult to post process.  
-    >Tip: Mesh resolution starting point for gyroid: `periodicity × 20`. If e.g. thickening with small thickness; resolutions needs to be higher.
+  * **resolution:** Required. The resolution of the largest size. If too coarse the mesh will not generate properly. If too fine the mesh will be unnecessarily large and difficult to post process.  
+    >Tip: Mesh resolution starting point for gyroid: `periodicity × 20`. If e.g. thickening with small thickness; resolutions needs to be higher. If there are artefacts in the geometry; try increasing the resolution.
 
   * **thicken:** Optional. Thickness in size units. Offset the surface (`thicken / 2`) to each side.
 
@@ -128,13 +131,12 @@ gyroid:
   Use with `thicken` to make a shell.  
   Use without `thicken` to make a skeletal.
 
-  * **heat exchanger:** Optional. Generates a heat exchanger core by creating alternating lids on volumes in X and Y. Caps the entire face in Z. Value is the thickness in size units. The lids will have a thickness of `round(heat exchanger / (size / resolution))`. Use with `thicken` or `cap extremes` is an error.
+  * **heat exchanger:** Optional. Generates a heat exchanger core by creating alternating lids on volumes in X and Y. Caps the entire face in Z. Value is the thickness in size units. The lids will have a thickness of `round(heat exchanger / (max(size) / resolution))`. Use with `thicken` or `cap extremes` is an error.
 
 * **gyroid:**
-  * **periodicity:** Required. The number of periods within the cube.
+  * **periodicity:** Required. The number of periods within `max(size)`.
   
   * **strut param:** Required. 0 ➝ a gyroid, <0< ➝ gyroid-like. In practice `strut param` ≠ 0 makes the volumes in the gyroid  asymmetrical. (The surfaces overlap somewhere around +/- 0.95.)
-
 
 
 ## Post process
@@ -236,15 +238,15 @@ gyroid:
 
 ```
 mesh:
-  size: 40
+  size: [60, 40, 80]
   resolution: 80
   heat exchanger: 1
 gyroid:
-  periodicity: 2
+  periodicity: 4
   strut param: 0
 ```
 
-<img src="images/gyroid_s40_r80_heatexchanger1_p2_sp0.png" />
+<img src="images/gyroid_s60-40-80_r80_he1_p4_s0.png" />
 
 
 ## Future features
@@ -253,5 +255,5 @@ Possible future features.
 
 * Done ~~Generate separate alternating lids on thickened geometry to close of hot/cold side volumes.~~
 
-* Geometry with non-equal sides.
+* Done ~~Geometry with non-equal sides.~~
 
