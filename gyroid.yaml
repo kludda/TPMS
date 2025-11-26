@@ -4,6 +4,7 @@ metadata:
 
 mesh:
   size: 40
+  size: [40, 20, 40]
   resolution: 40
   thicken: 1
   cap extremes:
