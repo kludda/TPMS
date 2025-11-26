@@ -88,7 +88,7 @@ required:
 
 Example usage:
 ```
-python generate.py --log INFO --conf gyroid.yaml --txt --png --stl
+python generate.py --log INFO --conf gyroid.yaml --txt --stl
 ```
 
 <a name="conf"></a>
@@ -118,8 +118,8 @@ gyroid:
 
 * **mesh:**
   * **size:** Required. Size of geometry.  
-    If size is an int or a float; the tool will generate a cube.  
-    If size is an array; the tool will generate a rectangular cuboid with sides of length [x, y, z].  
+    If `size` is an int or a float; the tool will generate a cube.  
+    If `size` is an array; the tool will generate a rectangular cuboid with sides of length [x, y, z].  
     >Note: `size` is the size of the gyroid surface or solid. Any "caps" or "lids" are outside `size`. Origin of gyroid surface or solid is however always at (0, 0, 0) in output file. 
 
   * **resolution:** Required. The resolution of the largest size. If too coarse the mesh will not generate properly. If too fine the mesh will be unnecessarily large and difficult to post process.  
@@ -162,7 +162,7 @@ Post-simplification cleaning: check
 
 Working with a large mesh in parametric CAD is an absolute pain.
 
-I suggest you merge the geometries in a mesh software, e.g. [MeshLab](https://www.meshlab.net), instead. Since we'll use an additive manufacturing method to make the heat exchanger, I think it is an acceptable approach.
+I suggest you merge the geometries in a mesh software, e.g. [MeshLab](https://www.meshlab.net), instead. Since an additive manufacturing method is required to make the heat exchanger, I think it is an acceptable approach.
 
 Ideas on work flow:
 
@@ -247,13 +247,3 @@ gyroid:
 ```
 
 <img src="images/gyroid_s60-40-80_r80_he1_p4_s0.png" />
-
-
-## Future features
-
-Possible future features.
-
-* Done ~~Generate separate alternating lids on thickened geometry to close of hot/cold side volumes.~~
-
-* Done ~~Geometry with non-equal sides.~~
-
