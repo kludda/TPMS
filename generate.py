@@ -95,12 +95,11 @@ if __name__ == "__main__":
     if isinstance(size, list):
         if not len(size) == 3:
             raise ValueError("'size' have wrong length.")
-        size = np.array(size)
     else:
-        size = np.array([m_conf['size'], m_conf['size'], m_conf['size']])
+        size = [m_conf['size']] * 3
 
 
-    sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size.max() / res
+    sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = max(size) / res
     vol = None
     shift = 0
 
@@ -118,11 +117,13 @@ if __name__ == "__main__":
             raise ValueError("Missing required gyroid conf: 'periodicity' or 'strut param'")
 
         logger.info("Generating gyroid...")
-        vol = tpms.gyroid.get_voxel_grid(t=t, a=a, res=res, size=size)
+        vol = tpms.gyroid.get_gyroid(t=t, a=a, res=res, size=size)
 
 
     if vol is None:
         raise ValueError("No geometry defined.")
+
+
 
 
     try:
@@ -133,6 +134,7 @@ if __name__ == "__main__":
         logger.info("Offsetting...")
         mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
         vol = tpms.mesh.voxel_offset(vol=vol, distance=distance * mgm, direction='sym')
+
 
 
     try:
@@ -146,17 +148,18 @@ if __name__ == "__main__":
 
 
     try:
-        distance = m_conf['heat exchanger']
+        distance = m_conf['cuboid heat exchanger']
     except:
         pass
     else:
         try:
             m_conf['thicken']
             m_conf['cap extremes']
+            m_conf['cylinder heat exchanger']
         except:
             pass
         else:
-            raise ValueError("'heat exchanger' together with 'thicken' or 'cap extremes' not allowed.")
+            raise ValueError("'heat exchanger' together with 'thicken', 'cap extremes', 'cylinder heat exchanger' not allowed.")
 
         logger.info("Creating caps for heat exchanger...")
         mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
@@ -201,6 +204,104 @@ if __name__ == "__main__":
         vol = np.maximum(vola,-volb)
 
         logger.info("Generating surfaces at bounding box extremes...")
+        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
+        shift = shift + cap_shift
+
+
+    try:
+        distance = m_conf['cylinder heat exchanger']
+    except:
+        pass
+    else:
+        try:
+            m_conf['thicken']
+            m_conf['cap extremes']
+            m_conf['cuboid heat exchanger']
+        except:
+            pass
+        else:
+            raise ValueError("'heat exchanger' together with 'thicken', 'cap extremes', 'cuboid heat exchanger' not allowed.")
+
+        logger.info("Creating caps for heat exchanger...")
+
+        logger.info("Offsetting...")
+        mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
+        vola = tpms.mesh.voxel_offset(vol=vol, distance=(distance / 2) * mgm)
+        volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
+
+        x, y, z = tpms.gyroid.get_voxel_grid(res=res, size=size)
+
+        logger.info("Creating Z lids...")
+
+        # Cap inside on Z
+        # masks for top and bottom surface
+        z_max = z >= size[2] / max(size)
+        z_min= z <= -size[2] / max(size)
+        # push inside region below iso-surface
+        vola[z_max] = -1
+        vola[z_min] = -1 
+
+        logger.info("Masking cylinder...")
+
+        R = min(size[0:2]) / max(size) # unit is in extent of voxel space (-1 to 1)
+
+        # cylindrical mask for outer surface 
+        ca = (x**2 + y**2)**0.5 - R
+        #ca = (x**2 + y**2)**0.5 - R + (distance/max(size)) * 2
+        # cylindrical mask for inner surface
+        cb = (x**2 + y**2)**0.5 - (R - (distance/max(size)) * 2) # space is -1 to 1 = 2 wide
+        #cb = (x**2 + y**2)**0.5 - R
+
+        # apply cylidrical mask
+        k = 8.0   # higher = sharper; 5–20 is typical
+        vola = tpms.mesh.smooth_max_lse(vola, ca, k)
+        volb = tpms.mesh.smooth_max_lse(volb, cb, k)
+
+        logger.info("Thickening Z lids...")
+
+        p = conf['mesh']['lid pad'] = round(distance / sizeunit_per_voxel)
+        shift = shift + p * sizeunit_per_voxel
+
+        # thicken outer by extending surface in z
+        vola = np.pad(vola, (
+            (0,0),
+            (0,0),
+            (p,p)
+            ),
+            mode='edge')
+
+        # pad outer x,y for shift to work
+        # outside is positive so adding positive values will not cross iso surface
+        vola = np.pad(vola, (
+            (p,p),
+            (p,p),
+            (0,0)
+            ),
+            mode='constant', constant_values=+1.0)
+
+        # pad inner by extending surface in z
+        volb = np.pad(volb, (
+            (0,0),
+            (0,0),
+            (p,p)
+            ),
+            mode='edge')
+
+        # pad inner x,y for shift to work
+        # outside is positive so adding positive values will not cross iso surface
+        volb = np.pad(volb, (
+            (p,p),
+            (p,p),
+            (0,0)
+            ),
+            mode='constant', constant_values=+1.0)
+
+
+        # join outer and inner surface
+        vol = np.maximum(vola,-volb)
+        #vol = -volb
+        
+        # cap z by padding with positive value (makes negative inside cross iso surface)
         vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
         shift = shift + cap_shift
 

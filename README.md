@@ -14,9 +14,10 @@ This is, as far as I know, the only open source gyroid generator that:
 &#x2615; [Buy me a coffee :)](https://paypal.me/davidalind)
 
 <p align="center">
-<img src="images/gyroid_s150-60-100_r300_he1_p15_s0.png" />
+<img src="images/gyroid_s150-60-100_r300_he1_p15_s0.png" width="45%" />
+<img src="images/gyroid_s60-60-150_r300_cylhe1_p15_s0.png" width="45%" />
 </p>
-Config file for the above:
+Config for the left:
 
 ```
 metadata:
@@ -24,7 +25,21 @@ metadata:
 mesh:
   size: [150, 60, 100]
   resolution: 300
-  heat exchanger: 1
+  cuboid heat exchanger: 1
+gyroid:
+  periodicity: 15
+  strut param: 0
+```
+
+Config for the right:
+
+```
+metadata:
+  filename: gyroid_s60-60-150_r300_cylhe1_p15_s0
+mesh:
+  size: [60, 60, 150]
+  resolution: 300
+  cylinder heat exchanger: 1
 gyroid:
   periodicity: 15
   strut param: 0
@@ -120,7 +135,7 @@ gyroid:
   * **size:** Required. Size of geometry.  
     If `size` is an int or a float; the tool will generate a cube.  
     If `size` is an array; the tool will generate a rectangular cuboid with sides of length [x, y, z].  
-    >Note: `size` is the size of the gyroid surface or solid. Any "caps" or "lids" are outside `size`. Origin of gyroid surface or solid is however always at (0, 0, 0) in output file. 
+    >Note: `size` is the size of the gyroid surface or solid. Any "caps" or "lids" are outside `size` (special case `cylinder heat exchanger`). Origin of gyroid surface or solid is however always at (0, 0, 0) in output file. 
 
   * **resolution:** Required. The resolution of the largest size. If too coarse the mesh will not generate properly. If too fine the mesh will be unnecessarily large and difficult to post process.  
     >Tip: Mesh resolution starting point for gyroid: `periodicity × 20`. If e.g. thickening with small thickness; resolutions needs to be higher. If there are artefacts in the geometry; try increasing the resolution.
@@ -131,7 +146,9 @@ gyroid:
   Use with `thicken` to make a shell.  
   Use without `thicken` to make a skeletal.
 
-  * **heat exchanger:** Optional. Generates a heat exchanger core by creating alternating lids on volumes in X and Y. Caps the entire face in Z. Value is the thickness in size units. The lids will have a thickness of `round(heat exchanger / (max(size) / resolution))`. Use with `thicken` or `cap extremes` is an error.
+  * **cuboid heat exchanger:** Optional. Generates a rectangular cuboid heat exchanger core by creating alternating lids on volumes in X and Y. Caps the entire face in Z. Value is the thickness in size units. The lids will have a thickness of `round(cuboid heat exchanger / (max(size) / resolution))`. Use with `cylinder heat exchanger`, `thicken` or `cap extremes` is an error.
+
+  * **cylinder heat exchanger:** Optional. Generates a cylindrical heat exchanger core by creating lids on lateral surface (X,Y) and end surfaces (Z). Value is the thickness in size units. Radius of cylinder is `min(size X, size Y)/2)`. Height is Z. The lids will have a thickness of `round(cylinder heat exchanger / (max(size) / resolution))`. The lids on the lateral surface is created inside size. Use with `cuboid heat exchanger`, `thicken` or `cap extremes` is an error.
 
 * **gyroid:**
   * **periodicity:** Required. The number of periods within `max(size)`.
@@ -170,12 +187,42 @@ Ideas on work flow:
 1. a. Design the heat exchanger shell *as printed* with inlets, outlets etc. in your parametric CAD software. Ensure your heat exchanger core can be inserted at origin (0, 0, 0). Mind the orientation.  
   b. Export the *as printed* heat exchanger shell to mesh.  
   c. Optional as needed: import your *as printed* design to a separate design and add your post processing steps (e.g. machinging, surface finnish, ...).
-1. a. Import heat exchanger shell and core to a mesh software, e.g. MeshLab. In case of MeshLab, at least, the mesh will imported to (0, 0, 0) and is ready to be merged.  
+1. a. Import *as printed* heat exchanger shell and heat exchanger core to a mesh software, e.g. MeshLab. In case of MeshLab, at least, the mesh will imported to (0, 0, 0) and is ready to be merged.  
   b. Merge mesh.  
    c. Export mesh.
 
 
 ## Examples
+
+### Rectangular cuboid gyroid heat exchanger
+
+```
+mesh:
+  size: [80, 60, 80]
+  resolution: 80
+  cuboid heat exchanger: 1
+gyroid:
+  periodicity: 4
+  strut param: 0
+```
+
+<img src="images/gyroid_s80-60-80_r80_cubhe1_p4_s0.png" />
+
+
+### Cylindrical gyroid heat exchanger
+
+```
+mesh:
+  size: [60, 60, 80]
+  resolution: 120
+  cylinder heat exchanger: 1
+gyroid:
+  periodicity: 10
+  strut param: 0
+```
+
+<img src="images/gyroid_s60-60-80_r120_cylhe1_p4_s0.png.png" />
+  
 
 ### Gyroid surface
 
@@ -234,16 +281,3 @@ gyroid:
 
 <img src="images/gyroid_s40_r40_cap_p2_sp-0.7.png" />
 
-### Gyroid heat exchanger
-
-```
-mesh:
-  size: [60, 40, 80]
-  resolution: 80
-  heat exchanger: 1
-gyroid:
-  periodicity: 4
-  strut param: 0
-```
-
-<img src="images/gyroid_s60-40-80_r80_he1_p4_s0.png" />
