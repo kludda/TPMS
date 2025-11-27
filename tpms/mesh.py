@@ -40,15 +40,17 @@ def get_mesh(vol, spacing, shift=None):
 
     return verts, faces
 
-# ChatGPT, I have no idea what it is doing but it seems to genereate correct result
+# Calculate mean gradient magnitude for approximate offsets of surface
 def mean_gradient_magnitude(vol, sizeunit_per_voxel):
     gx, gy, gz = np.gradient(vol, sizeunit_per_voxel, sizeunit_per_voxel, sizeunit_per_voxel)
     grad_mag = np.sqrt(gx**2 + gy**2 + gz**2)
     return np.mean(grad_mag[np.abs(vol) < 0.1])
 
 
-# direction = 'sym', '+', '-'
-# surfaces will have will negative facing each other
+# Offset iso surface in voxel grid.
+# direction = 'sym', '+', '-', None
+# If direction = None, a new offset surface will be returned,
+# else two surfaces with negative facing each other will be returned
 def voxel_offset(vol, distance, direction=None):
     if direction == 'sym':
         distance = distance / 2
