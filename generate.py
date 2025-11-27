@@ -95,12 +95,14 @@ if __name__ == "__main__":
     if isinstance(size, list):
         if not len(size) == 3:
             raise ValueError("'size' have wrong length.")
-        size = np.array(size)
+        #size = np.array(size)
     else:
-        size = np.array([m_conf['size'], m_conf['size'], m_conf['size']])
+        #size = np.array([m_conf['size'], m_conf['size'], m_conf['size']])
+        size = [m_conf['size']] * 3
 
 
-    sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size.max() / res
+    #sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size.max() / res
+    sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = max(size) / res
     vol = None
     shift = 0
 
@@ -124,162 +126,6 @@ if __name__ == "__main__":
     if vol is None:
         raise ValueError("No geometry defined.")
 
-
-    distance = 1
-    #mgm = 0.5
-    p = conf['mesh']['lid pad'] = round(distance / sizeunit_per_voxel)
-    #shift = shift + p * sizeunit_per_voxel
-
-
-    mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
-
-
-    x, y, z = tpms.gyroid.get_voxel_grid(res=res, size=size)
-    R = size[0] / size.max() #1
-
-
-
-
-    vola = tpms.mesh.voxel_offset(vol=vol, distance=(distance / 2) * mgm)
-    volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
-
-
-
-    '''
-    ca = (x**2 + y**2) <= (R-0.1)**2
-    #ca = (x**2 + y**2) <= R**2
-    #cb = (x**2 + y**2) <= (R-0.1)**2
-    cb = (x**2 + y**2) <= R**2    
-
-    vola[~ca] = 0     # push outside region far above iso-surface
-    volb[~cb] = -2    # push outside region far above iso-surface
-    '''
-
-    #size[0] / size.max()
-
-
-
-    z_max = z >= size[2] / size.max() #1
-    z_min= z <= -size[2] / size.max() #1
-    vola[z_max] -= 2
-    vola[z_min] -= 2
-
-
-    ca = (x**2 + y**2)**0.5 - R
-    #ca = (x**2 + y**2)**0.5 - R + (distance/size.max()) * 2
-    cb = (x**2 + y**2)**0.5 - R + (distance/size.max()) * 2 # space is -1 to 1 = 2 wide
-    #cb = (x**2 + y**2)**0.5 - R
-
-    '''
-    def smin(a, b, k):
-        # smooth min: k controls smoothness
-        return -np.log(np.exp(-k*a) + np.exp(-k*b)) / k
-    '''
-        
-    def smax(a, b, k):
-        return np.log(np.exp(k*a) + np.exp(k*b)) / k
-
-    '''
-    def smin_poly(a, b, k):
-        h = np.clip(0.5 + 0.5*(b - a)/k, 0.0, 1.0)
-        return b*(1-h) + a*h - k*h*(1-h)
-
-    def smax_poly(d1, d2, k):
-        h = np.clip(0.5 + 0.5 * (d1 - d2) / k, 0.0, 1.0)
-        return d1 * h + d2 * (1 - h) + k * h * (1 - h)
-    '''
-    
-    k = 8.0   # higher = sharper; 5–20 is typical
-    vola = smax(vola, ca, k)
-    volb = smax(volb, cb, k)
-
-    #k = 0.01  # smooth blending radius
-    #vola = smax_poly(vola, ca, k)
-    #volb = smax_poly(volb, cb, k)
-
-    #def smoothstep(edge0, edge1, x):
-        #t = np.clip((x - edge0) / (edge1 - edge0), 0, 1)
-        #return t*t*(3 - 2*t)
-
-
-    #w = 0.05       # smoothing width
-    #ca = 1.0 - smoothstep(R - w, R + w, d)
-
-
-    #vola = np.maximum(vola, ca)
-    #volb = np.maximum(volb, cb)
-
-    vola = np.pad(vola, (
-        (0,0),
-        (0,0),
-        (2,2)
-        ),
-        #mode='constant', constant_values=-1.0)
-        mode='edge')
-
-
-
-    vola = np.pad(vola, (
-        (0,0),
-        (0,0),
-        (2,2)
-        ),
-        mode='constant', constant_values=+1.0)
-        #mode='constant', constant_values=0)
-
-    
-
-    volb = np.pad(volb, (
-        (0,0),
-        (0,0),
-        (4,4)
-        ),
-        #mode='constant', constant_values=-10.0)
-        mode='edge')
-        #mode='constant')
-
-    '''
-    volb = np.pad(volb, (
-        (0,0),
-        (0,0),
-        (2,2)
-        ),
-        mode='constant', constant_values=-1.0)
-        #mode='constant', constant_values=0)
-    '''
-
-    '''
-    c = (x**2 + y**2)**0.5 - R
-    ca = np.pad(c, (
-        (0,0),
-        (0,0),
-        #(2,2)
-        (4,4)
-        ),
-        #mode='constant', constant_values=-1)
-        mode='edge')
-    c = (x**2 + y**2)**0.5 - R-0.1
-    cb = np.pad(c, (
-        (0,0),
-        (0,0),
-        #(2,2)
-        (4,4)
-        ),
-        mode='constant', constant_values=-1)
-        #mode='edge')
-    vola = np.maximum(vola, ca)
-    volb = np.maximum(volb, -cb)
-    '''
-
-    #vola = tpms.mesh.voxel_offset(vol=vol, distance=(distance / 2) * mgm)
-    #volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
-    
-    vol = np.maximum(vola,-volb)
-    #vol = np.maximum(vola,volb)
-    #vol = np.maximum(-vola,volb)
-    #vol = vola
-    vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
-    
 
 
 
@@ -305,17 +151,18 @@ if __name__ == "__main__":
 
 
     try:
-        distance = m_conf['heat exchanger']
+        distance = m_conf['cuboid heat exchanger']
     except:
         pass
     else:
         try:
             m_conf['thicken']
             m_conf['cap extremes']
+            m_conf['cylinder heat exchanger']
         except:
             pass
         else:
-            raise ValueError("'heat exchanger' together with 'thicken' or 'cap extremes' not allowed.")
+            raise ValueError("'heat exchanger' together with 'thicken', 'cap extremes', 'cylinder heat exchanger' not allowed.")
 
         logger.info("Creating caps for heat exchanger...")
         mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
@@ -360,6 +207,104 @@ if __name__ == "__main__":
         vol = np.maximum(vola,-volb)
 
         logger.info("Generating surfaces at bounding box extremes...")
+        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
+        shift = shift + cap_shift
+
+
+    try:
+        distance = m_conf['cylinder heat exchanger']
+    except:
+        pass
+    else:
+        try:
+            m_conf['thicken']
+            m_conf['cap extremes']
+            m_conf['cuboid heat exchanger']
+        except:
+            pass
+        else:
+            raise ValueError("'heat exchanger' together with 'thicken', 'cap extremes', 'cuboid heat exchanger' not allowed.")
+
+        logger.info("Creating caps for heat exchanger...")
+
+        logger.info("Offsetting...")
+        mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
+        vola = tpms.mesh.voxel_offset(vol=vol, distance=(distance / 2) * mgm)
+        volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
+
+        x, y, z = tpms.gyroid.get_voxel_grid(res=res, size=size)
+
+        logger.info("Creating Z lids...")
+
+        # Cap inside on Z
+        # masks for top and bottom surface
+        z_max = z >= size[2] / max(size)
+        z_min= z <= -size[2] / max(size)
+        # push inside region below iso-surface
+        vola[z_max] = -1
+        vola[z_min] = -1 
+
+        logger.info("Masking cylinder...")
+
+        R = min(size[0:2]) / max(size) # unit is in extent of voxel space (-1 to 1)
+
+        # cylindrical mask for outer surface 
+        ca = (x**2 + y**2)**0.5 - R
+        #ca = (x**2 + y**2)**0.5 - R + (distance/max(size)) * 2
+        # cylindrical mask for inner surface
+        cb = (x**2 + y**2)**0.5 - (R - (distance/max(size)) * 2) # space is -1 to 1 = 2 wide
+        #cb = (x**2 + y**2)**0.5 - R
+
+        # apply cylidrical mask
+        k = 8.0   # higher = sharper; 5–20 is typical
+        vola = tpms.mesh.smooth_max_lse(vola, ca, k)
+        volb = tpms.mesh.smooth_max_lse(volb, cb, k)
+
+        logger.info("Thickening Z lids...")
+
+        p = conf['mesh']['lid pad'] = round(distance / sizeunit_per_voxel)
+        shift = shift + p * sizeunit_per_voxel
+
+        # thicken outer by extending surface in z
+        vola = np.pad(vola, (
+            (0,0),
+            (0,0),
+            (p,p)
+            ),
+            mode='edge')
+
+        # pad outer x,y for shift to work
+        # outside is positive so adding positive values will not cross iso surface
+        vola = np.pad(vola, (
+            (p,p),
+            (p,p),
+            (0,0)
+            ),
+            mode='constant', constant_values=+1.0)
+
+        # pad inner by extending surface in z
+        volb = np.pad(volb, (
+            (0,0),
+            (0,0),
+            (p,p)
+            ),
+            mode='edge')
+
+        # pad inner x,y for shift to work
+        # outside is positive so adding positive values will not cross iso surface
+        volb = np.pad(volb, (
+            (p,p),
+            (p,p),
+            (0,0)
+            ),
+            mode='constant', constant_values=+1.0)
+
+
+        # join outer and inner surface
+        vol = np.maximum(vola,-volb)
+        #vol = -volb
+        
+        # cap z by padding with positive value (makes negative inside cross iso surface)
         vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
         shift = shift + cap_shift
 
