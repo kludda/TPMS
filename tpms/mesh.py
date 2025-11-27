@@ -5,13 +5,14 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+# Create mesh form voxel grid
 def get_mesh(vol, spacing, shift=None):
     verts, faces, normals, values = measure.marching_cubes(vol, level=0, spacing=(spacing, spacing, spacing))
 
-    if not spacing is None:
+    if not shift is None:
         # Move verts back
         verts = verts - shift
-        
+
     return verts, faces
 
 # ChatGPT, I have no idea what it is doing but it seems to genereate correct result
