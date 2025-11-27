@@ -221,7 +221,7 @@ gyroid:
   strut param: 0
 ```
 
-<img src="images/gyroid_s60-60-80_r120_cylhe1_p4_s0.png.png" />
+<img src="images/gyroid_s60-60-80_r120_cylhe1_p4_s0.png" />
   
 
 ### Gyroid surface
