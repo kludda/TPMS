@@ -4,6 +4,31 @@ from skimage import measure
 import logging
 logger = logging.getLogger(__name__)
 
+# log-sum-exp (LSE) smooth
+# k = smooth factor, higher = sharper; 5–20 is typical
+# Not tested to work properly
+def smooth_min_lse(a, b, k):
+    return -np.log(np.exp(-k*a) + np.exp(-k*b)) / k
+
+# log-sum-exp (LSE) smooth
+# k = smooth factor, higher = sharper; 5–20 is typical
+def smooth_max_lse(a, b, k):
+    return np.log(np.exp(k*a) + np.exp(k*b)) / k
+
+
+# Inigo Quilez’s polynomial smooth
+# k = smooth blending radius
+# Not tested to work properly
+def smooth_min_poly(a, b, k):
+    h = np.clip(0.5 + 0.5*(b - a)/k, 0.0, 1.0)
+    return b*(1-h) + a*h - k*h*(1-h)
+
+# Inigo Quilez’s polynomial smooth
+# k = smooth blending radius
+# Not tested to work properly
+def smooth_max_poly(a, b, k):
+    h = np.clip(0.5 + 0.5 * (a - b) / k, 0.0, 1.0)
+    return a * h + b * (1 - h) + k * h * (1 - h)
 
 # Create mesh form voxel grid
 def get_mesh(vol, spacing, shift=None):
