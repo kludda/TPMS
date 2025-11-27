@@ -95,13 +95,10 @@ if __name__ == "__main__":
     if isinstance(size, list):
         if not len(size) == 3:
             raise ValueError("'size' have wrong length.")
-        #size = np.array(size)
     else:
-        #size = np.array([m_conf['size'], m_conf['size'], m_conf['size']])
         size = [m_conf['size']] * 3
 
 
-    #sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = size.max() / res
     sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = max(size) / res
     vol = None
     shift = 0
