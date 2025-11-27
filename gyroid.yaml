@@ -4,11 +4,12 @@ metadata:
 
 mesh:
   size: 40
-  size: [40, 20, 40]
-  resolution: 40
+  size: [40, 40, 80]
+  resolution: 120
   thicken: 1
   cap extremes:
-  heat exchanger: 1
+  cuboid heat exchanger: 1
+  cylinder heat exchanger: 1
 
 gyroid:
   periodicity: 2
