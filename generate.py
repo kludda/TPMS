@@ -1,9 +1,10 @@
 import argparse
 import yaml
-import tpms
 import pprint
 import json
 import numpy as np
+
+import sdf
 
 import logging
 logger = logging.getLogger(__name__)
@@ -99,9 +100,10 @@ if __name__ == "__main__":
         size = [m_conf['size']] * 3
 
 
+    x, y, z = sdf.get(res=res, size=size)
     sizeunit_per_voxel = conf['mesh']['sizeunit_per_voxel'] = max(size) / res
     vol = None
-    shift = 0
+    shift = np.array([0,0,0])
 
 
     try:
@@ -115,15 +117,12 @@ if __name__ == "__main__":
             t = g_conf['strut param']
         except:
             raise ValueError("Missing required gyroid conf: 'periodicity' or 'strut param'")
-
         logger.info("Generating gyroid...")
-        vol = tpms.gyroid.get_gyroid(t=t, a=a, res=res, size=size)
+        vol = sdf.tpms.gyroid(x, y, z, t, a)
 
 
     if vol is None:
         raise ValueError("No geometry defined.")
-
-
 
 
     try:
@@ -132,9 +131,8 @@ if __name__ == "__main__":
         pass
     else:
         logger.info("Offsetting...")
-        mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
-        vol = tpms.mesh.voxel_offset(vol=vol, distance=distance * mgm, direction='sym')
-
+        mgm = conf['mesh']['mean_gradient_magnitude'] = sdf.mean_gradient_magnitude(vol, sizeunit_per_voxel)
+        vol = sdf.thicken(vol=vol, distance=distance * mgm, direction='sym')
 
 
     try:
@@ -143,8 +141,13 @@ if __name__ == "__main__":
         pass
     else:
         logger.info("Generating surfaces at bounding box extremes...")
-        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
-        shift = shift + cap_shift
+        vol = np.pad(vol, (
+            (2,2),
+            (2,2),
+            (2,2)
+            ),
+            mode='constant', constant_values=+1.0)
+        shift += np.array([-2]*3)
 
 
     try:
@@ -162,14 +165,13 @@ if __name__ == "__main__":
             raise ValueError("'heat exchanger' together with 'thicken', 'cap extremes', 'cylinder heat exchanger' not allowed.")
 
         logger.info("Creating caps for heat exchanger...")
-        mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
+        mgm = conf['mesh']['mean_gradient_magnitude'] = sdf.mean_gradient_magnitude(vol, sizeunit_per_voxel)
         
         logger.info("Offsetting...")
-        vola = tpms.mesh.voxel_offset(vol=vol, distance=(distance / 2) * mgm)
-        volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
+        vola = sdf.offset(vol=vol, distance=(distance / 2) * mgm)
+        volb = sdf.offset(vol=vol, distance=-(distance / 2) * mgm)
 
         p = conf['mesh']['lid pad'] = round(distance / sizeunit_per_voxel)
-        shift = shift + p * sizeunit_per_voxel
 
         logger.info("Creating lids...")
         vola = np.pad(vola, (
@@ -200,12 +202,19 @@ if __name__ == "__main__":
             ),
             mode='constant', constant_values=+1.0)
 
+        shift += np.array([-p]*3)
+
         #vol = np.maximum(-vola,volb) # just lids.
         vol = np.maximum(vola,-volb)
 
         logger.info("Generating surfaces at bounding box extremes...")
-        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
-        shift = shift + cap_shift
+        vol = np.pad(vol, (
+            (2,2),
+            (2,2),
+            (2,2)
+            ),
+            mode='constant', constant_values=+1.0)
+        shift += np.array([-2]*3)
 
 
     try:
@@ -225,11 +234,9 @@ if __name__ == "__main__":
         logger.info("Creating caps for heat exchanger...")
 
         logger.info("Offsetting...")
-        mgm = conf['mesh']['mean_gradient_magnitude'] = tpms.mesh.mean_gradient_magnitude(vol, sizeunit_per_voxel)
-        vola = tpms.mesh.voxel_offset(vol=vol, distance=(distance / 2) * mgm)
-        volb = tpms.mesh.voxel_offset(vol=vol, distance=-(distance / 2) * mgm)
-
-        x, y, z = tpms.gyroid.get_voxel_grid(res=res, size=size)
+        mgm = conf['mesh']['mean_gradient_magnitude'] = sdf.mean_gradient_magnitude(vol, sizeunit_per_voxel)
+        vola = sdf.offset(vol=vol, distance=(distance / 2) * mgm)
+        volb = sdf.offset(vol=vol, distance=-(distance / 2) * mgm)
 
         logger.info("Creating Z lids...")
 
@@ -247,20 +254,17 @@ if __name__ == "__main__":
 
         # cylindrical mask for outer surface 
         ca = (x**2 + y**2)**0.5 - R
-        #ca = (x**2 + y**2)**0.5 - R + (distance/max(size)) * 2
         # cylindrical mask for inner surface
         cb = (x**2 + y**2)**0.5 - (R - (distance/max(size)) * 2) # space is -1 to 1 = 2 wide
-        #cb = (x**2 + y**2)**0.5 - R
 
         # apply cylidrical mask
-        k = 8.0   # higher = sharper; 5–20 is typical
-        vola = tpms.mesh.smooth_max_lse(vola, ca, k)
-        volb = tpms.mesh.smooth_max_lse(volb, cb, k)
+        k = 8.0
+        vola = sdf.smooth_max_lse(vola, ca, k)
+        volb = sdf.smooth_max_lse(volb, cb, k)
 
         logger.info("Thickening Z lids...")
 
         p = conf['mesh']['lid pad'] = round(distance / sizeunit_per_voxel)
-        shift = shift + p * sizeunit_per_voxel
 
         # thicken outer by extending surface in z
         vola = np.pad(vola, (
@@ -270,15 +274,6 @@ if __name__ == "__main__":
             ),
             mode='edge')
 
-        # pad outer x,y for shift to work
-        # outside is positive so adding positive values will not cross iso surface
-        vola = np.pad(vola, (
-            (p,p),
-            (p,p),
-            (0,0)
-            ),
-            mode='constant', constant_values=+1.0)
-
         # pad inner by extending surface in z
         volb = np.pad(volb, (
             (0,0),
@@ -287,14 +282,7 @@ if __name__ == "__main__":
             ),
             mode='edge')
 
-        # pad inner x,y for shift to work
-        # outside is positive so adding positive values will not cross iso surface
-        volb = np.pad(volb, (
-            (p,p),
-            (p,p),
-            (0,0)
-            ),
-            mode='constant', constant_values=+1.0)
+        shift += np.array([0,0,-p])
 
 
         # join outer and inner surface
@@ -302,13 +290,23 @@ if __name__ == "__main__":
         #vol = -volb
         
         # cap z by padding with positive value (makes negative inside cross iso surface)
-        vol, cap_shift = tpms.mesh.voxel_cap_extremes(vol, spacing=sizeunit_per_voxel)
-        shift = shift + cap_shift
+        vol = np.pad(vol, (
+            (0,0),
+            (0,0),
+            (2,2)
+            ),
+            mode='constant', constant_values=+1.0)
+        shift += np.array([0,0,-2])
+
 
 
     logger.info("Generating mesh from voxel grid...")
-    verts, faces = tpms.mesh.get_mesh(vol=vol, spacing=sizeunit_per_voxel, shift=shift)
-    conf['mesh']['shift'] = shift
+    verts, faces = sdf.mesh.generate(vol=vol, spacing=sizeunit_per_voxel) #, shift=shift)
+
+    # Move verts back to 0,0,0
+    shift = shift * sizeunit_per_voxel
+    verts = sdf.mesh.translate(verts, shift)
+    conf['mesh']['shift'] = shift.tolist()
 
     conf['mesh']['vertices'] = len(verts)
     conf['mesh']['faces'] = len(faces)
@@ -320,7 +318,7 @@ if __name__ == "__main__":
         conf['stl'] = {}
         stl = conf['stl']['filename'] = filename + '.stl'
         logger.info("Saving STL file: '" + stl + "'...")
-        tpms.save_stl(verts=verts, faces=faces, filename=stl)
+        sdf.mesh.save(verts=verts, faces=faces, filename=stl)
 
     if args.txt:
         conf['txt'] = {}
@@ -333,7 +331,7 @@ if __name__ == "__main__":
         conf['png'] = {}
         png = conf['png']['filename'] = filename + '.png'
         logger.info("Saving PNG file: '" + png + "'...")
-        tpms.save_png(verts=verts, faces=faces, filename=png)
+        sdf.image.save_png(verts=verts, faces=faces, filename=png)
 
     logger.info(
         "Configuration:\n" +
@@ -342,6 +340,6 @@ if __name__ == "__main__":
 
     if args.show:
         logger.info("Showing mesh...")
-        tpms.show(verts=verts, faces=faces)
+        sdf.image.show(verts=verts, faces=faces)
 
 
