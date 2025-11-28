@@ -1,4 +1,6 @@
+from . import sdf
 from .sdf import *
-from .tpms import *
-from .mesh import *
-from .image import *
+
+from . import tpms
+from . import mesh
+from . import image
